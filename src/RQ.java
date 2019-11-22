@@ -46,7 +46,7 @@ public class RQ {
 		if(r<0) r=0;
 		String s = "";
 		if(error>0.3) s=" Large error";
-		System.out.println("sl="+aproxSl+", r="+r+s);
+//		System.out.println("sl="+aproxSl+", r="+r+s);
 	}
 	
 	public static double sl(double r) {

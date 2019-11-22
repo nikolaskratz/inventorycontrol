@@ -15,6 +15,8 @@ public class SimulationManager {
 	static double[] stdV18;
 	static double[] eoq;
 	static double[] ss; //safety stock
+	static double[] backorder;
+	static double[] holding;
 	static int[] l; //lead time
 	static double[] minL; //mindestlosgröße
 	static double[] round; //rundungsparameter
@@ -22,36 +24,79 @@ public class SimulationManager {
 	static double[][] plan19; //Bedarf 2019
 	static double[][] optInv; //optimal inventory calculated from optimization
 	static double[][] optLot; //optimal lot sizes calculated from optimization
+	static double[][] inv; //inventory for cons simulation
+	static double[][] q; //order quantity for cons simulation
+	static double fixPlan;
+	static double fixCons;
+	static double[] totalPlanCost;
+	static double[] totalConsCost;
 	
-	static double[][] cons18; //Verbrauch 2018
+	
 		
 	public static void main(String[] args) throws Exception {
 
 		rowCount=100;
 		getData();
-				
+		System.out.println("Got Data");
 		//calculate r,Q values
 		rVals = new int[rowCount];
 		for(int i=0;i<rVals.length;i++) {			
 			RQ rq = new RQ(ltdV18[i], stdV18[i], eoq[i], serviceLevel);
-			System.out.println(i);
+//			System.out.println(i);
 			rVals[i]=rq.getR();
 		}
+		System.out.println("Calculated r,Q");
+
 		simulatePlan();
+		System.out.println("Simulated Plan");
+
+		simulateCons();
+		System.out.println("Simulated Cons");
+		
+		
+		TotalCost t = new TotalCost(holding, backorder, fixPlan, fixCons, optInv, optLot, inv, q);
+		totalPlanCost = t.getTotalPlanCost();
+		totalConsCost = t.getTotalConsCost();
+
 		writeResults();
+		System.out.println("Wrote Results");
+
 		System.out.println("done");
+	}
+	
+	public static void simulateCons() {
+		inv = new double[rowCount][240];
+		q = new double[rowCount][240];
+		double initialInv;
+		boolean orderPending = false; //flag to check if already ordered
+		
+		for(int i=0; i<rowCount; i++) {
+			initialInv = rVals[i]; 					//CHANGE to real initial inventory!!!!!!!!!
+			for(int j=0; j<240; j++) {
+				if(j==0) {
+					inv[i][j] = initialInv - cons19[i][j]+q[i][j];
+				} else {
+					inv[i][j] = inv[i][j-1]+q[i][j]-cons19[i][j];
+				}
+				if(q[i][j]>0) orderPending = false;
+				if(j+l[i]<240 && !orderPending) {
+					while(inv[i][j]+q[i][j+l[i]]<rVals[i]) {
+//						System.out.println("update q at "+i+", "+j+l[i]);
+						q[i][j+l[i]]+=eoq[i];
+						orderPending = true;
+					}
+				}
+			}
+		}
 	}
 	
 	public static void simulatePlan() {
 		double dif;
 		
 		for(int i=0; i<rowCount; i++) {
-//			System.out.println();
-//			System.out.print("it: "+i+" -> ");
 			for(int j=0; j<240; j++) {
 				
 				dif = plan19[i][j]-cons19[i][j]; //Abweichung vom Plan
-//				System.out.print(dif+", ");
 				//setting inventory 
 				if(j==0) {
 					optInv[i][j] = optInv[i][j]+dif;
@@ -75,7 +120,7 @@ public class SimulationManager {
 					//round parameter
 					if(round[i]==0) round[i]=1;
 					while(((int) optLot[i][j+l[i]])%round[i]!=0) {
-						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
+//						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
 						optLot[i][j+l[i]]= Math.ceil(optLot[i][j+l[i]])+1;
 					}
 				}
@@ -100,7 +145,6 @@ public class SimulationManager {
 		ltdV18 = new double[rowCount];
 		stdV18 = new double[rowCount];
 		eoq = new double[rowCount];
-		cons18 = new double[rowCount][240];
 		cons19 = new double[rowCount][240];
 		plan19 = new double[rowCount][240];
 		optInv = new double[rowCount][240];
@@ -109,9 +153,12 @@ public class SimulationManager {
 		l = new int[rowCount];
 		minL = new double[rowCount];
 		round = new double[rowCount];
+		backorder = new double[rowCount];
+		holding = new double[rowCount];
 		
 		serviceLevel = params.getRow(16).getCell(2).getNumericCellValue();
-		
+		fixPlan = params.getRow(4).getCell(2).getNumericCellValue();
+		fixCons = params.getRow(5).getCell(2).getNumericCellValue();
 		
 		for(int i=0; i<rowCount; i++) {
 			
@@ -122,7 +169,9 @@ public class SimulationManager {
 			l[i]= (int) v18.getRow(i+2).getCell(1).getNumericCellValue();
 			minL[i] = v18.getRow(i+2).getCell(3).getNumericCellValue();
 			round[i] = v18.getRow(i+2).getCell(2).getNumericCellValue();
-			
+			backorder[i] = v18.getRow(i+2).getCell(6).getNumericCellValue();
+			holding[i] = v18.getRow(i+2).getCell(5).getNumericCellValue();
+			System.out.println(l[i]);
 			for(int j=0; j<240; j++) {
 				cons19[i][j] = demand19.getRow(i+2).getCell(j+11).getNumericCellValue();
 				plan19[i][j] = bedarf19.getRow(i+2).getCell(j+11).getNumericCellValue();
@@ -152,12 +201,23 @@ public class SimulationManager {
 		Workbook wb2 = WorkbookFactory.create(fs2);
 		Sheet planInv = wb2.getSheet("plan_sim_inv");
 		Sheet planLot = wb2.getSheet("plan_sim_lot");
+		Sheet consInv = wb2.getSheet("cons_sim_inv");
+		Sheet consLot = wb2.getSheet("cons_sim_lot");
+		Sheet totalCost = wb2.getSheet("total_cost");
 		for(int i=0; i<rowCount; i++) {
 			Row rI = planInv.createRow(i+2);
 			Row rL = planLot.createRow(i+2);
+			Row rCI = consInv.createRow(i+2);
+			Row rCL = consLot.createRow(i+2);
+			Row rCost = totalCost.createRow(i+1);
+			rCost.createCell(5).setCellValue(totalPlanCost[i]);
+			rCost.createCell(6).setCellValue(totalConsCost[i]);
 			for(int j=0; j<240; j++) {
 				rI.createCell(j+11).setCellValue(optInv[i][j]);
 				rL.createCell(j+11).setCellValue(optLot[i][j]);
+				rCI.createCell(j+11).setCellValue(inv[i][j]);
+				rCL.createCell(j+11).setCellValue(q[i][j]);
+				
 			}
 		}
 		FileOutputStream fos2 = new FileOutputStream("simulation.xlsx");
