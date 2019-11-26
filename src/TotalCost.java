@@ -38,7 +38,7 @@ public class TotalCost {
 			for(int j=0; j<planInv[i].length; j++) {
 				if(planLot[i][j]>0.001) {
 					totalPlanCost[i] += fixPlan;
-					System.out.println("orderCost");
+//					System.out.println("orderCost");
 				}
 				if(planInv[i][j]<0) {
 					totalPlanCost[i] += Math.abs(planInv[i][j])*b[i];
@@ -46,9 +46,18 @@ public class TotalCost {
 				}
 				if(planInv[i][j]>0) totalPlanCost[i] += planInv[i][j]*h[i];
 				
-				if(consLot[i][j]>0) totalConsCost[i] += fixCons;
-				if(consLot[i][j]<0) totalConsCost[i] += Math.abs(consLot[i][j])*b[i];
-				if(consLot[i][j]>0) totalConsCost[i] += consLot[i][j]*h[i];
+				if(consLot[i][j]>0) {
+					totalConsCost[i] += fixCons;
+//					System.out.println("order incoming at iteration "+j);
+				}
+				if(consInv[i][j]<0) {
+					totalConsCost[i] += Math.abs(consInv[i][j])*b[i];
+//					System.out.println("negative inventory at "+j);
+				}
+				if(consInv[i][j]>0) {
+					totalConsCost[i] += consInv[i][j]*h[i];
+//					System.out.println("positive inventory at "+j);
+				}
 			}
 			System.out.println("mat:"+i+" PCost:"+totalPlanCost[i]+", CCost:"+totalConsCost[i]);
 		}
