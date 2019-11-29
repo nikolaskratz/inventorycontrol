@@ -8,10 +8,12 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 public class SimulationManager {
 
+	static int iteration=0;
 	static int rowCount;
 	static int ofset;
 	static double serviceLevel;
 	static double stochastikH;
+	static double stochastikV;
 	static int[] rVals;
 	static double[] ltdV18;
 	static double[] stdV18;
@@ -35,16 +37,18 @@ public class SimulationManager {
 	static double[] totalConsCost;
 	static double[] initialInv;
 	
-	static String version = "_104-104";
+	static String version = "_0.2-0.4_0.8";
 	
-	
+	public SimulationManager(String version, int iteration) throws Exception {
+		this.version=version;
+		this.iteration=iteration;
+		main(null);
+	}
 		
-	public static void main(String[] args) throws Exception {
-
-		
-		
-		
+	public static void main(String[] args) throws Exception {	
+		System.out.println("\niteration: "+iteration);
 		rowCount=3879;
+//		rowCount=150;
 		ofset=0;
 		getData();
 		
@@ -68,7 +72,7 @@ public class SimulationManager {
 		TotalCost t = new TotalCost(holding, backorder, fixPlan, fixCons, optInv, optLot, inv, q);
 		totalPlanCost = t.getTotalPlanCost();
 		totalConsCost = t.getTotalConsCost();
-
+		System.out.println("Calculated total cost");
 		writeResults();
 		System.out.println("Wrote Results");
 
@@ -173,6 +177,7 @@ public class SimulationManager {
 		fixPlan = params.getRow(4).getCell(2).getNumericCellValue();
 		fixCons = params.getRow(5).getCell(2).getNumericCellValue();
 		stochastikH = params.getRow(10).getCell(5).getNumericCellValue();
+		stochastikV = params.getRow(13).getCell(5).getNumericCellValue();
 		
 		for(int i=0; i<rowCount; i++) {
 			
@@ -255,6 +260,39 @@ public class SimulationManager {
 		FileOutputStream fos2 = new FileOutputStream("simulation"+version+".xlsx");
 		wb2.write(fos2);
 //		fos2.close();
+		
+		//write info to Analysis sheet
+		FileInputStream fs3 = new FileInputStream("Analysis.xlsx");
+		Workbook wb3 = WorkbookFactory.create(fs3);
+		Sheet s = wb3.getSheet("SingleMaterialData");
+		for(int i=0; i<rowCount; i++) {
+			Row r = s.createRow(i+1+ofset+iteration*rowCount);
+			r.createCell(0).setCellValue(iteration);
+			r.createCell(1).setCellValue(i);
+			r.createCell(2).setCellValue(stochastikH);
+			r.createCell(3).setCellValue(stochastikV);
+			r.createCell(4).setCellValue(fixPlan);
+			r.createCell(5).setCellValue(fixCons);
+			r.createCell(6).setCellValue(fixPlan-fixCons);
+			r.createCell(7).setCellValue(serviceLevel);
+			r.createCell(8).setCellValue(l[i]);
+			r.createCell(9).setCellValue(holding[i]/0.2*240);
+			r.createCell(10).setCellValue(holding[i]);
+			r.createCell(11).setCellValue(backorder[i]);
+			r.createCell(12).setCellValue(totalDemand19[i]);
+			r.createCell(13).setCellValue(stdV19[i]);
+			r.createCell(14).setCellValue(minL[i]);
+			r.createCell(15).setCellValue(initialInv[i]);
+			r.createCell(16).setCellValue(ss[i]);
+			r.createCell(17).setCellValue(eoq[i]);
+			r.createCell(18).setCellValue(totalPlanCost[i]);
+			r.createCell(19).setCellValue(totalConsCost[i]);
+		}
+		FileOutputStream fos3 = new FileOutputStream("Analysis.xlsx");
+		wb3.write(fos3);
+//		fos3.close();
 	}
+	
+	
 
 }

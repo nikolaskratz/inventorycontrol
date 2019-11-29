@@ -17,7 +17,7 @@ public class TotalCost {
 	
 	public TotalCost(double[] h, double[] b, double fixPlan, double fixCons, double[][] planInv, double[][] planLot,
 			double[][] consInv, double[][] consLot) {
-		System.out.println("created");
+//		System.out.println("created");
 		this.h = h;
 		this.b = b;
 		this.fixPlan = fixPlan;
@@ -59,7 +59,7 @@ public class TotalCost {
 //					System.out.println("positive inventory at "+j);
 				}
 			}
-			System.out.println("mat:"+i+" PCost:"+totalPlanCost[i]+", CCost:"+totalConsCost[i]);
+//			System.out.println("mat:"+i+" PCost:"+totalPlanCost[i]+", CCost:"+totalConsCost[i]);
 		}
 	}
 	
