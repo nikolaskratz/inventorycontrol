@@ -2,9 +2,9 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 
 public class RQ {
 
-	static double leadTimeDemand=18.67;
-	static double std=0.945;
-	static double eoq=43.75;
+	static double leadTimeDemand=0.125;
+	static double std=0.01;
+	static double eoq=2.27;
 	static double serviceLevel=0.98;
 	
 	static int r;
@@ -26,22 +26,26 @@ public class RQ {
 			return;
 		}
 		r0=(int) -eoq;
+//		r0=0;
 		r1= (int) (leadTimeDemand*2+std*2+eoq*2);
 		r=(r0+r1)/2;
 		double error=100;
 		double aproxSl=999;
 		int artificialBreak=0;
-		while(error>0.005) {
+		while(error>0.01) {
 //			System.out.println(artificialBreak+" r="+r+", r0="+r0+", r1="+r1+", sl="+aproxSl);
 			aproxSl=sl(r);
+//			if(aproxSl<serviceLevel) {
+//				r0+=0.1*eoq;
+//			} else r1-=0.1*eoq;
 			if(aproxSl<serviceLevel) {
-				r0+=0.1*eoq;
-			} else r1-=0.1*eoq;
-			r=(r0+r1)/2;
+				r0=r;
+			} else r1=r;
+			r=(Math.abs(r0)+r1)/2;
 			error=Math.abs(serviceLevel-aproxSl);
 			artificialBreak++;
 			if(artificialBreak>1000) break;
-//			System.out.println("error="+error);			
+			System.out.println("r0="+r0+" r1="+r1 +" r="+r+" sl="+aproxSl);			
 		}
 		if(r<0) r=0;
 		String s = "";
@@ -52,7 +56,7 @@ public class RQ {
 	public static double sl(double r) {
 		double sl;
 		sl = 1-(std/eoq)*g((r-leadTimeDemand)/std);
-//		System.out.println(sl);
+//		System.out.println(sl+" r:"+r);
 		return sl;
 	}
 	

@@ -8,7 +8,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 public class SimulationManager {
 
-	static int iteration=0;
+	static int iteration;
 	static int rowCount;
 	static int ofset;
 	static double serviceLevel;
@@ -37,7 +37,7 @@ public class SimulationManager {
 	static double[] totalConsCost;
 	static double[] initialInv;
 	
-	static String version = "_0.2-0.4_0.8";
+	static String version = "_0.2-0.4_125-75";
 	
 	public SimulationManager(String version, int iteration) throws Exception {
 		this.version=version;
@@ -46,9 +46,10 @@ public class SimulationManager {
 	}
 		
 	public static void main(String[] args) throws Exception {	
-		System.out.println("\niteration: "+iteration);
+//		iteration=10;
+		System.out.println("\niteration: "+iteration+"; filename: "+version);
 		rowCount=3879;
-//		rowCount=150;
+//		rowCount=500;
 		ofset=0;
 		getData();
 		
@@ -121,23 +122,25 @@ public class SimulationManager {
 				
 				if(dif<0) {
 					if(optInv[i][j]<ss[i]) {
-						if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]+dif;
+						if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]+Math.abs(dif);
 					}
-				} else {
+				} else if(dif>0){
 					//wenn Planung zu hoch war --> Bestellung in t+l entsprechend reduzieren
 					if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]-dif;
 				}
-				if(j+l[i]<240) {
+				if(dif!=0 && j+l[i]<240) {
 					//minimum Lot size must be fullfilled
-					if(optLot[i][j+l[i]]<minL[i]) {
+					if(optLot[i][j+l[i]]<minL[i] && optLot[i][j+l[i]]>0) {
 						optLot[i][j+l[i]]=minL[i];
+					} else if(optLot[i][j+l[i]]<0) {
+						optLot[i][j+l[i]]=0;
 					}
 					//round parameter
-					if(round[i]==0) round[i]=1;
-					while(((int) optLot[i][j+l[i]])%round[i]!=0) {
-//						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
-						optLot[i][j+l[i]]= Math.ceil(optLot[i][j+l[i]])+1;
-					}
+//					if(round[i]==0) round[i]=1;
+//					while(((int) optLot[i][j+l[i]])%round[i]!=0) {
+////						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
+//						optLot[i][j+l[i]]= Math.ceil(optLot[i][j+l[i]])+1;
+//					}
 				}
 			}
 		}
@@ -193,7 +196,9 @@ public class SimulationManager {
 			holding[i] = v18.getRow(i+2+ofset).getCell(5).getNumericCellValue();
 			initialInv[i] = demand19.getRow(i+2+ofset).getCell(10).getNumericCellValue();
 //			System.out.println(l[i]);
+//			System.out.println("iteration: "+i);
 			for(int j=0; j<240; j++) {
+				
 				cons19[i][j] = demand19.getRow(i+2+ofset).getCell(j+11).getNumericCellValue();
 				plan19[i][j] = bedarf19.getRow(i+2+ofset).getCell(j+11).getNumericCellValue();
 				optInv[i][j] = optimalInv.getRow(i+2+ofset).getCell(j+11).getNumericCellValue();
@@ -215,7 +220,7 @@ public class SimulationManager {
 		}
 		FileOutputStream fos = new FileOutputStream("solutions"+version+".xlsx");
 		wb.write(fos);
-//		fos.close();
+		fos.close();
 		
 		//totalDemand calculation
 		double[] totalDemand19 = new double[rowCount];
@@ -224,6 +229,7 @@ public class SimulationManager {
 				totalDemand19[i] += cons19[i][j];
 			}
 		}
+		System.out.println("wrote solutions");
 		
 		//write simulation results
 		FileInputStream fs2 = new FileInputStream("simulation"+version+".xlsx");
@@ -259,14 +265,17 @@ public class SimulationManager {
 		}
 		FileOutputStream fos2 = new FileOutputStream("simulation"+version+".xlsx");
 		wb2.write(fos2);
-//		fos2.close();
+		fos2.close();
+		
+		System.out.println("wrote simulation");
+
 		
 		//write info to Analysis sheet
 		FileInputStream fs3 = new FileInputStream("Analysis.xlsx");
 		Workbook wb3 = WorkbookFactory.create(fs3);
 		Sheet s = wb3.getSheet("SingleMaterialData");
 		for(int i=0; i<rowCount; i++) {
-			Row r = s.createRow(i+1+ofset+iteration*rowCount);
+			Row r = s.createRow(i+1+ofset+iteration*3879);
 			r.createCell(0).setCellValue(iteration);
 			r.createCell(1).setCellValue(i);
 			r.createCell(2).setCellValue(stochastikH);
@@ -290,7 +299,9 @@ public class SimulationManager {
 		}
 		FileOutputStream fos3 = new FileOutputStream("Analysis.xlsx");
 		wb3.write(fos3);
-//		fos3.close();
+		fos3.close();
+		System.out.println("wrote analysis");
+
 	}
 	
 	
