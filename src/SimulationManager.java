@@ -37,7 +37,7 @@ public class SimulationManager {
 	static double[] totalConsCost;
 	static double[] initialInv;
 	
-	static String version = "_0.2-0.4_125-75";
+	static String version = "_default";
 	
 	public SimulationManager(String version, int iteration) throws Exception {
 		this.version=version;
@@ -46,7 +46,7 @@ public class SimulationManager {
 	}
 		
 	public static void main(String[] args) throws Exception {	
-//		iteration=10;
+//		iteration=0;
 		System.out.println("\niteration: "+iteration+"; filename: "+version);
 		rowCount=3879;
 //		rowCount=500;
@@ -108,40 +108,68 @@ public class SimulationManager {
 	
 	public static void simulatePlan() {
 		double dif;
+		double sumDif=0;
+		int periodInd=0;
 		
 		for(int i=0; i<rowCount; i++) {
 			for(int j=0; j<240; j++) {
 				
-				dif = plan19[i][j]-cons19[i][j]; //Abweichung vom Plan
-				//setting inventory 
+				//deviation from plan
+				dif = plan19[i][j]-cons19[i][j];
+				
+				//total inventory deviation not yet compensated for
+//				sumDif += dif;
+				
+				//setting real inventory levels 
 				if(j==0) {
 					optInv[i][j] = optInv[i][j]+dif;
 				} else {
 					optInv[i][j] = optInv[i][j-1]+optLot[i][j]-cons19[i][j]+dif;
 				}
 				
-				if(dif<0) {
-					if(optInv[i][j]<ss[i]) {
-						if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]+Math.abs(dif);
-					}
-				} else if(dif>0){
-					//wenn Planung zu hoch war --> Bestellung in t+l entsprechend reduzieren
-					if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]-dif;
+				//adapt next (optimal) incoming order (after lead time)
+				periodInd=j+l[i];
+				while(periodInd<239 && optLot[i][periodInd]<=0) { //finding next order
+					periodInd++;
 				}
-				if(dif!=0 && j+l[i]<240) {
-					//minimum Lot size must be fullfilled
-					if(optLot[i][j+l[i]]<minL[i] && optLot[i][j+l[i]]>0) {
-						optLot[i][j+l[i]]=minL[i];
-					} else if(optLot[i][j+l[i]]<0) {
-						optLot[i][j+l[i]]=0;
+				if(periodInd<240 && optLot[i][periodInd]>0) {
+					if(dif<0) {
+						optLot[i][periodInd] += Math.abs(dif);
+//						System.out.println("added: "+Math.abs(dif)+" at "+i+",j");
+					} else if(dif>0) {
+						optLot[i][periodInd] -= dif;
+//						System.out.println("subst: "+dif+" at "+i+",j");
 					}
-					//round parameter
-//					if(round[i]==0) round[i]=1;
-//					while(((int) optLot[i][j+l[i]])%round[i]!=0) {
-////						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
-//						optLot[i][j+l[i]]= Math.ceil(optLot[i][j+l[i]])+1;
+					if(optLot[i][periodInd]<0) {
+						optLot[i][periodInd]=0;
+					} else if(optLot[i][periodInd]<minL[i]) {
+						optLot[i][periodInd]=minL[i];
+					}
+				}
+				
+//				
+//				if(dif<0) {
+//					if(optInv[i][j]<ss[i]) {
+//						if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]+Math.abs(dif);
 //					}
-				}
+//				} else if(dif>0){
+//					//wenn Planung zu hoch war --> Bestellung in t+l entsprechend reduzieren
+//					if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]-dif;
+//				}
+//				if(dif!=0 && j+l[i]<240) {
+//					//minimum Lot size must be fullfilled
+//					if(optLot[i][j+l[i]]<minL[i] && optLot[i][j+l[i]]>0) {
+//						optLot[i][j+l[i]]=minL[i];
+//					} else if(optLot[i][j+l[i]]<0) {
+//						optLot[i][j+l[i]]=0;
+//					}
+//					//round parameter
+////					if(round[i]==0) round[i]=1;
+////					while(((int) optLot[i][j+l[i]])%round[i]!=0) {
+//////						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
+////						optLot[i][j+l[i]]= Math.ceil(optLot[i][j+l[i]])+1;
+////					}
+//				}
 			}
 		}
 	}

@@ -45,7 +45,7 @@ public class RQ {
 			error=Math.abs(serviceLevel-aproxSl);
 			artificialBreak++;
 			if(artificialBreak>1000) break;
-			System.out.println("r0="+r0+" r1="+r1 +" r="+r+" sl="+aproxSl);			
+//			System.out.println("r0="+r0+" r1="+r1 +" r="+r+" sl="+aproxSl);			
 		}
 		if(r<0) r=0;
 		String s = "";
