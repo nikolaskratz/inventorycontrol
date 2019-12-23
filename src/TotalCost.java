@@ -12,6 +12,8 @@ public class TotalCost {
 	
 	static double[] totalPlanCost;
 	static double[] totalConsCost;
+	static double[] fixCostPlan;
+	static double[] fixCostCons;
 	
 	
 	
@@ -33,11 +35,14 @@ public class TotalCost {
 		
 		totalPlanCost = new double[planInv.length];
 		totalConsCost = new double[consInv.length];
+		fixCostPlan = new double[planInv.length];
+		fixCostCons = new double[consInv.length];
 		
 		for(int i=0; i<totalPlanCost.length; i++) {
 			for(int j=0; j<planInv[i].length; j++) {
 				if(planLot[i][j]>0.001) {
 					totalPlanCost[i] += fixPlan;
+					fixCostPlan[i] += fixPlan;
 //					System.out.println("orderCost");
 				}
 				if(planInv[i][j]<0) {
@@ -48,6 +53,7 @@ public class TotalCost {
 				
 				if(consLot[i][j]>0) {
 					totalConsCost[i] += fixCons;
+					fixCostCons[i] += fixCons;
 //					System.out.println("order incoming at iteration "+j);
 				}
 				if(consInv[i][j]<0) {
@@ -70,5 +76,14 @@ public class TotalCost {
 	public static double[] getTotalConsCost() {
 		return totalConsCost;
 	}
+	public static double[] getFixCostPlan() {
+		return fixCostPlan;
+	}
+
+	public static double[] getFixCostCons() {
+		return fixCostCons;
+	}
+
+	
 	
 }

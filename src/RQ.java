@@ -2,10 +2,10 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 
 public class RQ {
 
-	static double leadTimeDemand=0.125;
-	static double std=0.01;
-	static double eoq=2.27;
-	static double serviceLevel=0.98;
+	static double leadTimeDemand=208;
+	static double std=13.85;
+	static double eoq=3825;
+	static double serviceLevel=0.5;
 	
 	static int r;
 	static int r0;
@@ -28,11 +28,12 @@ public class RQ {
 		r0=(int) -eoq;
 //		r0=0;
 		r1= (int) (leadTimeDemand*2+std*2+eoq*2);
-		r=(r0+r1)/2;
+		r=(Math.abs(r0)+r1)/2;
+//		r=(r0+r1)/2;
 		double error=100;
 		double aproxSl=999;
 		int artificialBreak=0;
-		while(error>0.01) {
+		while(error>0.05) {
 //			System.out.println(artificialBreak+" r="+r+", r0="+r0+", r1="+r1+", sl="+aproxSl);
 			aproxSl=sl(r);
 //			if(aproxSl<serviceLevel) {
@@ -49,8 +50,8 @@ public class RQ {
 		}
 		if(r<0) r=0;
 		String s = "";
-		if(error>0.3) s=" Large error";
-//		System.out.println("sl="+aproxSl+", r="+r+s);
+		if(error>0.05) s=" Large error: "+error+", artiB="+artificialBreak;
+		System.out.println("sl="+aproxSl+", r="+r+s);
 	}
 	
 	public static double sl(double r) {

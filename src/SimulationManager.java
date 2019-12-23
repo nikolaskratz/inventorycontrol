@@ -35,6 +35,8 @@ public class SimulationManager {
 	static double fixCons;
 	static double[] totalPlanCost;
 	static double[] totalConsCost;
+	static double[] fixCostPlan;
+	static double[] fixCostCons;
 	static double[] initialInv;
 	
 	static String version = "_default";
@@ -63,19 +65,21 @@ public class SimulationManager {
 		}
 		System.out.println("Calculated r,Q");
 
-		simulatePlan();
-		System.out.println("Simulated Plan");
-
-		simulateCons();
-		System.out.println("Simulated Cons");
-		
-		
-		TotalCost t = new TotalCost(holding, backorder, fixPlan, fixCons, optInv, optLot, inv, q);
-		totalPlanCost = t.getTotalPlanCost();
-		totalConsCost = t.getTotalConsCost();
-		System.out.println("Calculated total cost");
-		writeResults();
-		System.out.println("Wrote Results");
+//		simulatePlan();
+//		System.out.println("Simulated Plan");
+//
+//		simulateCons();
+//		System.out.println("Simulated Cons");
+//		
+//		
+//		TotalCost t = new TotalCost(holding, backorder, fixPlan, fixCons, optInv, optLot, inv, q);
+//		totalPlanCost = t.getTotalPlanCost();
+//		totalConsCost = t.getTotalConsCost();
+//		fixCostPlan = t.getFixCostPlan();
+//		fixCostCons = t.getFixCostCons();
+//		System.out.println("Calculated total cost");
+//		writeResults();
+//		System.out.println("Wrote Results");
 
 		System.out.println("done");
 	}
@@ -324,6 +328,8 @@ public class SimulationManager {
 			r.createCell(17).setCellValue(eoq[i]);
 			r.createCell(18).setCellValue(totalPlanCost[i]);
 			r.createCell(19).setCellValue(totalConsCost[i]);
+			r.createCell(23).setCellValue(fixCostPlan[i]);
+			r.createCell(24).setCellValue(fixCostCons[i]);
 		}
 		FileOutputStream fos3 = new FileOutputStream("Analysis.xlsx");
 		wb3.write(fos3);
