@@ -12,14 +12,10 @@ public class TotalCost {
 	
 	static double[] totalPlanCost;
 	static double[] totalConsCost;
-	static double[] fixCostPlan;
-	static double[] fixCostCons;
-	
 	
 	
 	public TotalCost(double[] h, double[] b, double fixPlan, double fixCons, double[][] planInv, double[][] planLot,
 			double[][] consInv, double[][] consLot) {
-//		System.out.println("created");
 		this.h = h;
 		this.b = b;
 		this.fixPlan = fixPlan;
@@ -35,37 +31,30 @@ public class TotalCost {
 		
 		totalPlanCost = new double[planInv.length];
 		totalConsCost = new double[consInv.length];
-		fixCostPlan = new double[planInv.length];
-		fixCostCons = new double[consInv.length];
 		
 		for(int i=0; i<totalPlanCost.length; i++) {
 			for(int j=0; j<planInv[i].length; j++) {
 				if(planLot[i][j]>0.001) {
 					totalPlanCost[i] += fixPlan;
-					fixCostPlan[i] += fixPlan;
-//					System.out.println("orderCost");
 				}
 				if(planInv[i][j]<0) {
 					totalPlanCost[i] += Math.abs(planInv[i][j])*b[i];
 					
 				}
-				if(planInv[i][j]>0) totalPlanCost[i] += planInv[i][j]*h[i];
+				if(planInv[i][j]>0) {
+					totalPlanCost[i] += planInv[i][j]*h[i];
+				}
 				
 				if(consLot[i][j]>0) {
 					totalConsCost[i] += fixCons;
-					fixCostCons[i] += fixCons;
-//					System.out.println("order incoming at iteration "+j);
 				}
 				if(consInv[i][j]<0) {
 					totalConsCost[i] += Math.abs(consInv[i][j])*b[i];
-//					System.out.println("negative inventory at "+j);
 				}
 				if(consInv[i][j]>0) {
 					totalConsCost[i] += consInv[i][j]*h[i];
-//					System.out.println("positive inventory at "+j);
 				}
 			}
-//			System.out.println("mat:"+i+" PCost:"+totalPlanCost[i]+", CCost:"+totalConsCost[i]);
 		}
 	}
 	
@@ -75,15 +64,6 @@ public class TotalCost {
 
 	public static double[] getTotalConsCost() {
 		return totalConsCost;
-	}
-	public static double[] getFixCostPlan() {
-		return fixCostPlan;
-	}
-
-	public static double[] getFixCostCons() {
-		return fixCostCons;
-	}
-
-	
+	}	
 	
 }

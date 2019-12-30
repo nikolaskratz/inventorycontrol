@@ -35,8 +35,6 @@ public class SimulationManager {
 	static double fixCons;
 	static double[] totalPlanCost;
 	static double[] totalConsCost;
-	static double[] fixCostPlan;
-	static double[] fixCostCons;
 	static double[] initialInv;
 	
 	static String version = "_default";
@@ -48,39 +46,34 @@ public class SimulationManager {
 	}
 		
 	public static void main(String[] args) throws Exception {	
-//		iteration=0;
 		System.out.println("\niteration: "+iteration+"; filename: "+version);
 		rowCount=3879;
-//		rowCount=500;
 		ofset=0;
-		getData();
 		
+		getData();
 		System.out.println("Got Data");
-		//calculate r,Q values
+		
 		rVals = new int[rowCount];
 		for(int i=0;i<rVals.length;i++) {			
 			RQ rq = new RQ(ltdV18[i], stdV18[i], eoq[i], serviceLevel);
-//			System.out.println(i);
 			rVals[i]=rq.getR();
 		}
 		System.out.println("Calculated r,Q");
 
-//		simulatePlan();
-//		System.out.println("Simulated Plan");
-//
-//		simulateCons();
-//		System.out.println("Simulated Cons");
-//		
-//		
-//		TotalCost t = new TotalCost(holding, backorder, fixPlan, fixCons, optInv, optLot, inv, q);
-//		totalPlanCost = t.getTotalPlanCost();
-//		totalConsCost = t.getTotalConsCost();
-//		fixCostPlan = t.getFixCostPlan();
-//		fixCostCons = t.getFixCostCons();
-//		System.out.println("Calculated total cost");
-//		writeResults();
-//		System.out.println("Wrote Results");
+		simulateDem();
+		System.out.println("Simulated DemandDriven");
 
+		simulateCons();
+		System.out.println("Simulated ConsumptionDriven");
+		
+		
+		TotalCost t = new TotalCost(holding, backorder, fixPlan, fixCons, optInv, optLot, inv, q);
+		totalPlanCost = t.getTotalPlanCost();
+		totalConsCost = t.getTotalConsCost();
+		System.out.println("Calculated total cost");
+		
+		writeResults();
+		System.out.println("Wrote Results");
 		System.out.println("done");
 	}
 	
@@ -101,7 +94,6 @@ public class SimulationManager {
 				if(q[i][j]>0) orderPending = false;
 				if(j+l[i]<240 && !orderPending) {
 					while(inv[i][j]+q[i][j+l[i]]<rVals[i]) {
-//						System.out.println("lead time:"+l[i]+", eoq:"+eoq[i]+", currentInv:"+inv[i][j]);
 						q[i][j+l[i]]+=eoq[i];
 						orderPending = true;
 					}
@@ -110,7 +102,7 @@ public class SimulationManager {
 		}
 	}
 	
-	public static void simulatePlan() {
+	public static void simulateDem() {
 		double dif;
 		double sumDif=0;
 		int periodInd=0;
@@ -120,9 +112,6 @@ public class SimulationManager {
 				
 				//deviation from plan
 				dif = plan19[i][j]-cons19[i][j];
-				
-				//total inventory deviation not yet compensated for
-//				sumDif += dif;
 				
 				//setting real inventory levels 
 				if(j==0) {
@@ -139,10 +128,8 @@ public class SimulationManager {
 				if(periodInd<240 && optLot[i][periodInd]>0) {
 					if(dif<0) {
 						optLot[i][periodInd] += Math.abs(dif);
-//						System.out.println("added: "+Math.abs(dif)+" at "+i+",j");
 					} else if(dif>0) {
 						optLot[i][periodInd] -= dif;
-//						System.out.println("subst: "+dif+" at "+i+",j");
 					}
 					if(optLot[i][periodInd]<0) {
 						optLot[i][periodInd]=0;
@@ -150,36 +137,11 @@ public class SimulationManager {
 						optLot[i][periodInd]=minL[i];
 					}
 				}
-				
-//				
-//				if(dif<0) {
-//					if(optInv[i][j]<ss[i]) {
-//						if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]+Math.abs(dif);
-//					}
-//				} else if(dif>0){
-//					//wenn Planung zu hoch war --> Bestellung in t+l entsprechend reduzieren
-//					if(j+l[i]<240) optLot[i][j+l[i]]=optLot[i][j+l[i]]-dif;
-//				}
-//				if(dif!=0 && j+l[i]<240) {
-//					//minimum Lot size must be fullfilled
-//					if(optLot[i][j+l[i]]<minL[i] && optLot[i][j+l[i]]>0) {
-//						optLot[i][j+l[i]]=minL[i];
-//					} else if(optLot[i][j+l[i]]<0) {
-//						optLot[i][j+l[i]]=0;
-//					}
-//					//round parameter
-////					if(round[i]==0) round[i]=1;
-////					while(((int) optLot[i][j+l[i]])%round[i]!=0) {
-//////						System.out.println("it:"+i+", stuck "+round[i]+", optLot(t+l)="+optLot[i][j+l[i]]);
-////						optLot[i][j+l[i]]= Math.ceil(optLot[i][j+l[i]])+1;
-////					}
-//				}
 			}
 		}
 	}
 	
 	public static void getData() throws Exception {
-//		FileInputStream fs = new FileInputStream("C:\\Users\\nikol\\Desktop\\VT_Garching_Lotsizing\\Daily\\data_daily.xlsx");
 		FileInputStream fs = new FileInputStream("data_daily"+version+".xlsx");
 		FileInputStream fs2 = new FileInputStream("solutions"+version+".xlsx");
 		Workbook wb2 = WorkbookFactory.create(fs2);
@@ -227,8 +189,6 @@ public class SimulationManager {
 			backorder[i] = v18.getRow(i+2+ofset).getCell(6).getNumericCellValue();
 			holding[i] = v18.getRow(i+2+ofset).getCell(5).getNumericCellValue();
 			initialInv[i] = demand19.getRow(i+2+ofset).getCell(10).getNumericCellValue();
-//			System.out.println(l[i]);
-//			System.out.println("iteration: "+i);
 			for(int j=0; j<240; j++) {
 				
 				cons19[i][j] = demand19.getRow(i+2+ofset).getCell(j+11).getNumericCellValue();
@@ -328,8 +288,6 @@ public class SimulationManager {
 			r.createCell(17).setCellValue(eoq[i]);
 			r.createCell(18).setCellValue(totalPlanCost[i]);
 			r.createCell(19).setCellValue(totalConsCost[i]);
-			r.createCell(23).setCellValue(fixCostPlan[i]);
-			r.createCell(24).setCellValue(fixCostCons[i]);
 		}
 		FileOutputStream fos3 = new FileOutputStream("Analysis.xlsx");
 		wb3.write(fos3);
